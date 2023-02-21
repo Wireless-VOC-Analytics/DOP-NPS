@@ -1,0 +1,364 @@
+---
+title: "DOP NPS Trends"
+output: html_document
+date: "2023-02-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, include = FALSE}
+# accounts <- read.csv("C:/Users/matthew.sherrick/Downloads/Boost DOP NPS Accounts.csv")  # 6149
+# survey <- read.csv("C:/Users/matthew.sherrick/Downloads/Boost DOP NPS Survey.csv")      # 6268
+# 
+# DOP <- merge(accounts, survey, by = "CUSTOMER_ACCOUNT_SK")                              # 6268
+# 
+# # write.csv(DOP,"DOP2.csv")
+# 
+# n_distinct(accounts$CUSTOMER_ACCOUNT_SK)
+# n_distinct(survey$CUSTOMER_ACCOUNT_SK)
+# 
+# n_distinct(DOP$CUSTOMER_ACCOUNT_SK)
+
+DOP <- read.csv("C:/Users/matthew.sherrick/Documents/DOP2.csv")
+
+DOP$endDate <- as.Date(DOP$endDate, format = "%m/%d/%Y")
+```
+
+```{r, include = FALSE}
+library(lubridate)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+#####################
+# Average NPS by week
+weekly <- DOP %>%
+  group_by(week = cut(endDate, "week")) %>%
+  mutate(weeklyNPS = mean(NPS)) %>%
+  dplyr::select(week,weeklyNPS) %>%
+  arrange(desc(week))
+
+weekly
+  
+data <- weekly %>%
+  group_by(week) %>%
+  summarize(NPS = mean(weeklyNPS)) %>%
+  arrange(desc(week))
+
+data
+
+data$week <- as.Date(data$week)
+
+ggplot(data, aes(x = week, y = NPS)) + geom_line()
+##################
+```
+The following plots show the trend of weekly NPS based on the 8 variables of interest: New vs. Tenure (0-6 months vs > 6 mo.), DOP migrated vs Not, BYOD vs Buy, Autopay, OS Apple vs. Android, Sales Channel (E-Commerce, Indirect or National Retail), Single vs. Multiline, and MRC Amount (in $10 buckets). I also included additional slices worth looking into, like plan type, network provider (AT&T vs T-Mobile), and port status The first set of 8 plots display the all time survey data, and the later set just focuses on the latest 6-week period.
+
+# All-Time Survey Data
+
+```{r, message = FALSE, echo = FALSE}
+# plots
+slice <- DOP %>%
+  group_by(week = cut(endDate, "week")) %>%
+  mutate(weeklyNPS = mean(NPS))
+
+# BYOD
+p <- slice %>%
+  select(ORDER_DEV_BYOD, week, NPS) %>%
+  group_by(week, ORDER_DEV_BYOD) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = ORDER_DEV_BYOD, color = as.factor(ORDER_DEV_BYOD))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by BYOD Orders", subtitle = "Blue = BYOD, Red = Device Purchase")
+  
+ggplotly(p)
+
+# Migrated
+p <- slice %>%
+  select(MIGRATED_FLAG, week, NPS) %>%
+  group_by(week, MIGRATED_FLAG) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = MIGRATED_FLAG, color = as.factor(MIGRATED_FLAG))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Migration Status", subtitle = "Blue = Migrated, Red = Not Migrated")
+
+ggplotly(p)
+# autopay
+p<- slice %>%
+  select(ACCT_AUTOPAY, week, NPS) %>%
+  group_by(week, ACCT_AUTOPAY) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = ACCT_AUTOPAY, color = as.factor(ACCT_AUTOPAY))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by AutoPay Status", subtitle = "Blue = AutoPay, Red = No AutoPay")
+
+ggplotly(p)
+# order channel
+p <- slice %>%
+  select(ORDER_CHANNEL, week, NPS) %>%
+  group_by(week, ORDER_CHANNEL) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = ORDER_CHANNEL, color = as.factor(ORDER_CHANNEL))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Order Channel", subtitle = "Red = E-Commerce, Green = Indirect, Blue = National Retail, Purple = Unknown")
+
+ggplotly(p)
+# num of lines
+multiline.slice <- subset(slice, !is.na(NUMBER_OF_ACTIVE_LINES)) 
+
+p <- multiline.slice %>%
+  select(NUMBER_OF_ACTIVE_LINES, week, NPS) %>%
+  group_by(week, NUMBER_OF_ACTIVE_LINES) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = NUMBER_OF_ACTIVE_LINES, color = as.factor(NUMBER_OF_ACTIVE_LINES))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Number of Lines", subtitle = "Red = 1 Line, Yellow Green = 2, Green = 3, Blue = 4, Purple = 5")
+ggplotly(p)
+# device OS
+os.slice <- subset(slice, !is.na(DEV_OS))
+
+p<- os.slice %>%
+  select(DEV_OS, week, NPS) %>%
+  group_by(week, DEV_OS) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = DEV_OS, color = as.factor(DEV_OS))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Device OS", subtitle = "Red = Android, Blue = Apple")
+ggplotly(p)
+
+# Tenure
+
+p <- slice %>%
+  select(Tenure, week, NPS) %>%
+  group_by(week, Tenure) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = Tenure, color = as.factor(Tenure))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Tenure", subtitle = "Red = New (0 - 6 Months), Blue = Tenured (6+ Months)")
+ggplotly(p)
+
+# MRC
+p<-slice %>%
+  select(MRC.Bin, week, NPS) %>%
+  group_by(week, MRC.Bin) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = MRC.Bin, color = as.factor(MRC.Bin))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1)) +
+  scale_color_manual(values = c('red2', 'orange3', 'yellow3', 'green3', 'cyan3', 'purple2', 'pink')) +
+  labs(title = "Average Weekly NPS by MRC", subtitle = "Red = $0-10, Orange = $11-20, Yellow = $21-30, Green = $31-40, Blue = $41-50, Purple = $51-60, Pink = $61+") +
+  theme(plot.subtitle = element_text(size = 8))
+  
+ggplotly(p)
+# # Plan type
+# 
+# slice["ORDER_PLAN"][slice["ORDER_PLAN"] == ''] <- NA
+# slice.plan <- subset(slice, !is.na(ORDER_PLAN))
+# 
+# slice.plan %>%
+#   select(ORDER_PLAN, week, NPS) %>%
+#   group_by(week, ORDER_PLAN) %>%
+#   summarize(NPS = mean(NPS)) %>%
+#   ggplot(aes(x = week, y = NPS, group = ORDER_PLAN)) + geom_line(show.legend = TRUE) +
+#   theme(axis.text.x = element_text(angle=90, hjust =1, size = 7)) +
+#   facet_wrap(~ORDER_PLAN) +
+#   theme(strip.text.x = element_text(size = 7)) +
+#   labs(title = "Average Weekly NPS by Plan Type")
+
+# network provider
+p <- slice %>%
+  select(network_provider_name, week, NPS) %>%
+  group_by(week, network_provider_name) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = network_provider_name, color = as.factor(network_provider_name))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Network Provider", subtitle = "Red = AT&T, Blue = T-Mobile, Green = DISH (Genesis)")
+ggplotly(p)
+
+# Port In
+p <- slice %>%
+  select(PORT_IN, week, NPS) %>%
+  group_by(week, PORT_IN) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = PORT_IN, color = as.factor(PORT_IN))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Port Status", subtitle = "Blue = Port In, Red = No Port")
+ggplotly(p)
+
+# Plan type - strategic plan code
+
+slice["STRATEGIC_PRICE_PLAN_NAME_CODE"][slice["STRATEGIC_PRICE_PLAN_NAME_CODE"] == ''] <- NA
+slice.plan <- subset(slice, !is.na(STRATEGIC_PRICE_PLAN_NAME_CODE))
+
+p <- slice.plan %>%
+  select(STRATEGIC_PRICE_PLAN_NAME_CODE, week, NPS) %>%
+  group_by(week, STRATEGIC_PRICE_PLAN_NAME_CODE) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = STRATEGIC_PRICE_PLAN_NAME_CODE)) + geom_line(show.legend = TRUE) +
+  theme(axis.text.x = element_text(angle=90, hjust =1 )) +
+  facet_wrap(~STRATEGIC_PRICE_PLAN_NAME_CODE) +
+  theme(strip.text.x = element_text(size = 7)) +
+  labs(title = "Average Weekly NPS by Plan Type")
+ggplotly(p)
+```
+
+
+
+# Most Recent 6 Weeks
+
+```{r, echo = FALSE, message = FALSE}
+# 6 week slice
+slice <- DOP %>%
+  group_by(week = cut(endDate, "week")) %>%
+  mutate(weeklyNPS = mean(NPS))
+
+six.week <- slice %>%
+  filter(endDate > '2023-01-08')
+
+six.week <- six.week %>%
+  filter(endDate < '2023-02-14')
+  
+  
+# plots
+# BYOD
+p<-six.week %>%
+  select(ORDER_DEV_BYOD, week, NPS) %>%
+  group_by(week, ORDER_DEV_BYOD) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = ORDER_DEV_BYOD, color = as.factor(ORDER_DEV_BYOD))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by BYOD Orders", subtitle = "Blue = BYOD, Red = Device Purchase")
+ggplotly(p)
+
+# Migrated
+p<-six.week %>%
+  select(MIGRATED_FLAG, week, NPS) %>%
+  group_by(week, MIGRATED_FLAG) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = MIGRATED_FLAG, color = as.factor(MIGRATED_FLAG))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Migration Status", subtitle = "Blue = Migrated, Red = Not Migrated")
+ggplotly(p)
+
+# autopay
+p<-six.week %>%
+  select(ACCT_AUTOPAY, week, NPS) %>%
+  group_by(week, ACCT_AUTOPAY) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = ACCT_AUTOPAY, color = as.factor(ACCT_AUTOPAY))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by AutoPay Status", subtitle = "Blue = AutoPay, Red = No AutoPay")
+ggplotly(p)
+
+# order channel
+p<-six.week %>%
+  select(ORDER_CHANNEL, week, NPS) %>%
+  group_by(week, ORDER_CHANNEL) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = ORDER_CHANNEL, color = as.factor(ORDER_CHANNEL))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Order Channel", subtitle = "Red = E-Commerce, Green = Indirect, Blue = National Retail, Purple = Unknown")
+ggplotly(p)
+
+# num of lines
+multiline.six.week <- subset(six.week, !is.na(NUMBER_OF_ACTIVE_LINES)) 
+
+p<-multiline.six.week %>%
+  select(NUMBER_OF_ACTIVE_LINES, week, NPS) %>%
+  group_by(week, NUMBER_OF_ACTIVE_LINES) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = NUMBER_OF_ACTIVE_LINES, color = as.factor(NUMBER_OF_ACTIVE_LINES))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  scale_color_manual(values = c('red2', 'orange3', 'green3', 'cyan3', 'purple2')) +
+  labs(title = "Average Weekly NPS by Number of Lines", subtitle = "Red = 1 Line, Orange = 2, Green = 3, Blue = 4, Purple = 5")
+ggplotly(p)
+
+# device OS
+os.six.week <- subset(six.week, !is.na(DEV_OS))
+
+p<-os.six.week %>%
+  select(DEV_OS, week, NPS) %>%
+  group_by(week, DEV_OS) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = DEV_OS, color = as.factor(DEV_OS))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Device OS", subtitle = "Red = Android, Blue = Apple")
+ggplotly(p)
+
+# Tenure
+
+p<-six.week %>%
+  select(Tenure, week, NPS) %>%
+  group_by(week, Tenure) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = Tenure, color = as.factor(Tenure))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Tenure", subtitle = "Red = New (0 - 6 Months), Blue = Tenured (6+ Months)")
+ggplotly(p)
+
+# MRC
+p<- six.week %>%
+  select(MRC.Bin, week, NPS) %>%
+  group_by(week, MRC.Bin) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = MRC.Bin, color = as.factor(MRC.Bin))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1)) +
+  scale_color_manual(values = c('red2', 'orange3', 'yellow3', 'green3', 'cyan3', 'purple2', 'pink')) +
+  labs(title = "Average Weekly NPS by MRC", subtitle = "Red = $0-10, Orange = $11-20, Yellow = $21-30, Green = $31-40, Blue = $41-50, Purple = $51-60, Pink = $61+") +
+  theme(plot.subtitle = element_text(size = 8))
+ggplotly(p)
+  
+# Plan type - order plan
+
+# six.week["ORDER_PLAN"][six.week["ORDER_PLAN"] == ''] <- NA
+# six.week.plan <- subset(six.week, !is.na(ORDER_PLAN))
+# 
+# six.week.plan %>%
+#   select(ORDER_PLAN, week, NPS) %>%
+#   group_by(week, ORDER_PLAN) %>%
+#   summarize(NPS = mean(NPS)) %>%
+#   ggplot(aes(x = week, y = NPS, group = ORDER_PLAN)) + geom_line(show.legend = TRUE) +
+#   theme(axis.text.x = element_text(angle=90, hjust =1 )) +
+#   facet_wrap(~ORDER_PLAN) +
+#   theme(strip.text.x = element_text(size = 7)) +
+#   labs(title = "Average Weekly NPS by Plan Type")
+
+# network provider
+p<-six.week %>%
+  select(network_provider_name, week, NPS) %>%
+  group_by(week, network_provider_name) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = network_provider_name, color = as.factor(network_provider_name))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Network Provider", subtitle = "Red = AT&T, Blue = T-Mobile)")
+ggplotly(p)
+
+# Port In
+p<-six.week %>%
+  select(PORT_IN, week, NPS) %>%
+  group_by(week, PORT_IN) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = PORT_IN, color = as.factor(PORT_IN))) + geom_line(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle=45, hjust =1 )) +
+  labs(title = "Average Weekly NPS by Port Status", subtitle = "Blue = Port In, Red = No Port")
+ggplotly(p)
+
+# Plan type - strategic plan code
+
+six.week["STRATEGIC_PRICE_PLAN_NAME_CODE"][six.week["STRATEGIC_PRICE_PLAN_NAME_CODE"] == ''] <- NA
+six.week.plan <- subset(six.week, !is.na(STRATEGIC_PRICE_PLAN_NAME_CODE))
+
+p<-six.week.plan %>%
+  select(STRATEGIC_PRICE_PLAN_NAME_CODE, week, NPS) %>%
+  group_by(week, STRATEGIC_PRICE_PLAN_NAME_CODE) %>%
+  summarize(NPS = mean(NPS)) %>%
+  ggplot(aes(x = week, y = NPS, group = STRATEGIC_PRICE_PLAN_NAME_CODE)) + geom_line(show.legend = TRUE) +
+  theme(axis.text.x = element_text(angle=90, hjust =1 )) +
+  facet_wrap(~STRATEGIC_PRICE_PLAN_NAME_CODE) +
+  theme(strip.text.x = element_text(size = 7)) +
+  labs(title = "Average Weekly NPS by Plan Type")
+ggplotly(p)
+```
