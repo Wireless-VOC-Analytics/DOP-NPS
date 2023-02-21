@@ -189,20 +189,20 @@ p <- slice %>%
 ggplotly(p)
 
 # Plan type - strategic plan code
-
-slice["STRATEGIC_PRICE_PLAN_NAME_CODE"][slice["STRATEGIC_PRICE_PLAN_NAME_CODE"] == ''] <- NA
-slice.plan <- subset(slice, !is.na(STRATEGIC_PRICE_PLAN_NAME_CODE))
-
-p <- slice.plan %>%
-  select(STRATEGIC_PRICE_PLAN_NAME_CODE, week, NPS) %>%
-  group_by(week, STRATEGIC_PRICE_PLAN_NAME_CODE) %>%
-  summarize(NPS = mean(NPS)) %>%
-  ggplot(aes(x = week, y = NPS, group = STRATEGIC_PRICE_PLAN_NAME_CODE)) + geom_line(show.legend = TRUE) +
-  theme(axis.text.x = element_text(angle=90, hjust =1 )) +
-  facet_wrap(~STRATEGIC_PRICE_PLAN_NAME_CODE) +
-  theme(strip.text.x = element_text(size = 7)) +
-  labs(title = "Average Weekly NPS by Plan Type")
-ggplotly(p)
+# 
+# slice["STRATEGIC_PRICE_PLAN_NAME_CODE"][slice["STRATEGIC_PRICE_PLAN_NAME_CODE"] == ''] <- NA
+# slice.plan <- subset(slice, !is.na(STRATEGIC_PRICE_PLAN_NAME_CODE))
+# 
+# p <- slice.plan %>%
+#   select(STRATEGIC_PRICE_PLAN_NAME_CODE, week, NPS) %>%
+#   group_by(week, STRATEGIC_PRICE_PLAN_NAME_CODE) %>%
+#   summarize(NPS = mean(NPS)) %>%
+#   ggplot(aes(x = week, y = NPS, group = STRATEGIC_PRICE_PLAN_NAME_CODE)) + geom_line(show.legend = TRUE) +
+#   theme(axis.text.x = element_text(angle=90, hjust =1 )) +
+#   facet_wrap(~STRATEGIC_PRICE_PLAN_NAME_CODE) +
+#   theme(strip.text.x = element_text(size = 7)) +
+#   labs(title = "Average Weekly NPS by Plan Type")
+# ggplotly(p)
 ```
 
 
@@ -348,17 +348,17 @@ ggplotly(p)
 
 # Plan type - strategic plan code
 
-six.week["STRATEGIC_PRICE_PLAN_NAME_CODE"][six.week["STRATEGIC_PRICE_PLAN_NAME_CODE"] == ''] <- NA
-six.week.plan <- subset(six.week, !is.na(STRATEGIC_PRICE_PLAN_NAME_CODE))
-
-p<-six.week.plan %>%
-  select(STRATEGIC_PRICE_PLAN_NAME_CODE, week, NPS) %>%
-  group_by(week, STRATEGIC_PRICE_PLAN_NAME_CODE) %>%
-  summarize(NPS = mean(NPS)) %>%
-  ggplot(aes(x = week, y = NPS, group = STRATEGIC_PRICE_PLAN_NAME_CODE)) + geom_line(show.legend = TRUE) +
-  theme(axis.text.x = element_text(angle=90, hjust =1 )) +
-  facet_wrap(~STRATEGIC_PRICE_PLAN_NAME_CODE) +
-  theme(strip.text.x = element_text(size = 7)) +
-  labs(title = "Average Weekly NPS by Plan Type")
-ggplotly(p)
+# six.week["STRATEGIC_PRICE_PLAN_NAME_CODE"][six.week["STRATEGIC_PRICE_PLAN_NAME_CODE"] == ''] <- NA
+# six.week.plan <- subset(six.week, !is.na(STRATEGIC_PRICE_PLAN_NAME_CODE))
+# 
+# p<-six.week.plan %>%
+#   select(STRATEGIC_PRICE_PLAN_NAME_CODE, week, NPS) %>%
+#   group_by(week, STRATEGIC_PRICE_PLAN_NAME_CODE) %>%
+#   summarize(NPS = mean(NPS)) %>%
+#   ggplot(aes(x = week, y = NPS, group = STRATEGIC_PRICE_PLAN_NAME_CODE)) + geom_line(show.legend = TRUE) +
+#   theme(axis.text.x = element_text(angle=90, hjust =1 )) +
+#   facet_wrap(~STRATEGIC_PRICE_PLAN_NAME_CODE) +
+#   theme(strip.text.x = element_text(size = 7)) +
+#   labs(title = "Average Weekly NPS by Plan Type")
+# ggplotly(p)
 ```
